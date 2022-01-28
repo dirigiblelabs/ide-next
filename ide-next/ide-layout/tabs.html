@@ -1,0 +1,18 @@
+<div class="tabs-container">
+  <section data-scrollbar class="fd-tabs-scrollable">
+    <ul class="fd-tabs fd-tabs-closable" role="tablist">
+      <li ng-repeat="pane in panes" aria-selected="{{isPaneSelected(pane)}}" role="tab" class="fd-tabs__item">
+        <a class="fd-tabs__link" href="" ng-click="tabClick(pane, $event)">
+          <span class="fd-tabs__tag">
+            {{pane.title}}
+            <button ng-show="closable" class="fd-button fd-button--transparent fd-button--compact fd-message-strip__close"
+              aria-label="Close">
+              <i class="sap-icon--decline"></i>
+            </button>
+          </span>
+        </a>
+      </li>
+    </ul>
+  </section>
+  <div class="tabs-content" ng-transclude></div>
+</div>

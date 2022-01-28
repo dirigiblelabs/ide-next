@@ -1,0 +1,25 @@
+<div class="dg-perspective-view">
+    <split direction="horizontal" class="split" ng-transclude>
+        <split-pane size="20" min-size="0" snap-offset="100" class="split-pane pane-left" ng-transclude>
+            <explorer-toolbar></explorer-toolbar>
+            <accordion>
+                <accordion-pane ng-repeat="view in explorerViews" view="view"></accordion-pane>
+            </accordion>
+        </split-pane>
+        <split-pane size="80" min-size="100" snap-offset="0" ng-transclude>
+            <split direction="vertical" ng-transclude>
+                <split-pane size="70" min-size="0" snap-offset="0" class="split-pane pane-center" ng-transclude>
+                    <tabs closable="true" remove-tab="closeFile(pane)" selected-pane="selectedFile">
+                        <tab-pane ng-repeat="file in openFiles" id="file.path" title="file.label" path="file.path"></tab-pane>
+                    </tabs>
+                </split-pane>
+                <split-pane size="30" min-size="0" snap-offset="100" class="split-pane pane-bottom" ng-transclude>
+                    <tabs selected-pane="selectedView">
+                        <tab-pane ng-repeat="view in bottomTabsViews" id="view.id" title="view.label" path="view.settings.path">
+                        </tab-pane>
+                    </tabs>
+                </split-pane>
+            </split>
+        </split-pane>
+    </split>
+</div>
