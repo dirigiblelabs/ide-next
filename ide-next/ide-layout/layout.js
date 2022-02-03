@@ -16,6 +16,8 @@ angular.module('layout', ['idePerspective', 'ideMessageHub'])
                     });
                     //no extension point. provisioned "manually"
                     //data.push({ "id": "editor", "factory": "editor", "region": "center-middle", "label": "Editor", "settings": {} });
+                    let brandingInfo = getBrandingInfo();
+                    data.push({ "id": "welcome", "factory": "frame", "region": "center-middle", "label": "Welcome", "settings": { "path": brandingInfo.welcomePage } });
                     //no extension point yet
                     data.push({ "id": "result", "factory": "frame", "region": "center-bottom", "label": "Result", "settings": { "path": "../ide-database/sql/result.html" } });
                     data.push({ "id": "properties", "factory": "frame", "region": "center-bottom", "label": "Properties", "settings": { "path": "../ide/properties.html" } });
@@ -39,10 +41,11 @@ angular.module('layout', ['idePerspective', 'ideMessageHub'])
             },
             controller: ['$scope', function ($scope) {
                 $scope.views = [];
-                $scope.explorerViews = [];
-                $scope.bottomTabsViews = [];
-                $scope.selectedFile = null;
-                $scope.selectedView = null;
+                $scope.explorerTabs = [];
+                $scope.bottomTabs = [];
+                $scope.centerTabs = [];
+                $scope.selectedCenterTab = null;
+                $scope.selectedBottomTab = null;
 
                 if ($scope.layoutViews) {
                     $scope.initialOpenViews = $scope.layoutViews.split(',');
@@ -61,21 +64,23 @@ angular.module('layout', ['idePerspective', 'ideMessageHub'])
                             return $scope.views.find(function (v) { return v.id === viewId });
                         });
 
-                    $scope.explorerViews = openViews
+                    $scope.explorerTabs = openViews
                         .filter(function (view) {
                             return view.region.startsWith('left');
                         })
-                        .map(function (view) {
-                            return Object.assign({}, view);
-                        });
+                        .map(mapViewToTab);
 
-                    $scope.bottomTabsViews = openViews
+                    $scope.bottomTabs = openViews
                         .filter(function (view) {
-                            return view.region.startsWith('center');
+                            return view.region === 'center-bottom';
                         })
-                        .map(function (view) {
-                            return Object.assign({}, view);
-                        });
+                        .map(mapViewToTab);
+
+                    $scope.centerTabs = openViews
+                        .filter(function (view) {
+                            return view.region === 'center-top' || view.region === 'center-middle';
+                        })
+                        .map(mapViewToTab);
 
                     if (eventHandlers) {
                         Object.keys(eventHandlers).forEach(function (evtName) {
@@ -86,20 +91,24 @@ angular.module('layout', ['idePerspective', 'ideMessageHub'])
                     }
                 });
 
-                let brandingInfo = getBrandingInfo();
-
-                $scope.openFiles = [{ id: 'welcome', label: 'Welcome', path: brandingInfo.welcomePage }];
-
-                $scope.closeFile = function (pane) {
-                    var index = $scope.openFiles.findIndex(function (f) { return f.path === pane.path });
+                $scope.closeCenterTab = function (pane) {
+                    var index = $scope.centerTabs.findIndex(function (f) { return f.path === pane.path });
                     if (index >= 0)
-                        $scope.openFiles.splice(index, 1);
+                        $scope.centerTabs.splice(index, 1);
                 }
 
                 function findView(views, view) {
                     return views.find(function (v) {
                         return v.id === view.id;
                     });
+                }
+
+                function mapViewToTab(view) {
+                    return {
+                        id: view.id,
+                        label: view.label,
+                        path: view.settings.path
+                    };
                 }
 
                 Layouts.manager = {
@@ -115,7 +124,7 @@ angular.module('layout', ['idePerspective', 'ideMessageHub'])
                                         editorId = editors[0].id;
                                     } else {
                                         let formEditors = editors.filter(function (e) {
-                                            switch (e) {
+                                            switch (e.id) {
                                                 case "orion":
                                                 case "monaco":
                                                 case "ace":
@@ -142,24 +151,24 @@ angular.module('layout', ['idePerspective', 'ideMessageHub'])
                                 src += "&contentType=" + contentType;
 
                             if (extraArgs) {
-                                const extraArgs = Object.keys(extraArgs);
-                                for (let i = 0; i < extraArgs.length; i++) {
-                                    src += `&${extraArgs[i]}=${encodeURIComponent(extraArgs[extraArgs[i]])}`;
+                                const extraArgsKeys = Object.keys(extraArgs);
+                                for (let i = 0; i < extraArgsKeys.length; i++) {
+                                    src += `&${extraArgsKeys[i]}=${encodeURIComponent(extraArgs[extraArgsKeys[i]])}`;
                                 }
                             }
 
-                            let file = $scope.openFiles.find(function (f) { return f.id === resourcePath });
-                            if (file) {
-                                $scope.selectedFile = file.path;
+                            let fileTab = $scope.centerTabs.find(function (f) { return f.id === resourcePath });
+                            if (fileTab) {
+                                $scope.selectedCenterTab = fileTab.id;
                             } else {
-                                file = {
+                                fileTab = {
                                     id: resourcePath,
                                     label: resourceLabel,
                                     path: src
                                 };
 
-                                $scope.selectedFile = file.path;
-                                $scope.openFiles.push(file);
+                                $scope.selectedCenterTab = fileTab.id;
+                                $scope.centerTabs.push(fileTab);
                             }
                             $scope.$digest();
                         }
@@ -168,21 +177,33 @@ angular.module('layout', ['idePerspective', 'ideMessageHub'])
                         var view = $scope.views.find(function (v) { return v.id === viewId });
                         if (view) {
                             if (view.region.startsWith('left')) {
-                                var explorerView = findView($scope.explorerViews, view);
-                                if (explorerView) {
-                                    explorerView.expanded = true;//make sure this is the best way
+                                var explorerViewTab = findView($scope.explorerTabs, view);
+                                if (explorerViewTab) {
+                                    explorerViewTab.expanded = true;
                                 } else {
-                                    explorerView = Object.assign({}, view, { expanded: true });
-                                    $scope.explorerViews.push(explorerView);
+                                    explorerViewTab = mapViewToTab(view);
+                                    explorerViewTab.expanded = true;
+                                    $scope.explorerTabs.push(explorerViewTab);
                                 }
-                            } else {
-                                var bottomTabsView = findView($scope.bottomTabsViews, view);
-                                if (bottomTabsView) {
-                                    $scope.selectedView = bottomTabsView.id;
+
+                            } else if (view.region === 'center-middle' || view.region === 'center-top') {
+                                var centerViewTab = findView($scope.centerTabs, view);
+                                if (centerViewTab) {
+                                    $scope.selectedCenterTab = centerViewTab.id;
                                 } else {
-                                    bottomTabsView = Object.assign({}, view);
-                                    $scope.selectedView = bottomTabsView.id;
-                                    $scope.bottomTabsViews.push(bottomTabsView);
+                                    centerViewTab = mapViewToTab(view);
+                                    $scope.selectedCenterTab = centerViewTab.id;
+                                    $scope.centerTabs.push(centerViewTab);
+                                }
+
+                            } else {
+                                var bottomViewTab = findView($scope.bottomTabs, view);
+                                if (bottomViewTab) {
+                                    $scope.selectedBottomTab = bottomViewTab.id;
+                                } else {
+                                    bottomViewTab = mapViewToTab(view);
+                                    $scope.selectedBottomTab = bottomViewTab.id;
+                                    $scope.bottomTabs.push(bottomViewTab);
                                 }
                             }
                         }
@@ -419,6 +440,7 @@ angular.module('layout', ['idePerspective', 'ideMessageHub'])
                     if (this.isPaneSelected(pane))
                         return;
 
+                    $scope.lastSelectedPane = $scope.selectedPane;
                     $scope.selectedPane = pane.id;
                 }
 
@@ -446,8 +468,9 @@ angular.module('layout', ['idePerspective', 'ideMessageHub'])
                     var nextSelectedPane;
                     if ($scope.isPaneSelected(pane)) {
                         if ($scope.lastSelectedPane)
-                            nextSelectedPane = $scope.lastSelectedPane;
-                        else if (panes.length > 0) {
+                            nextSelectedPane = panes.find(function (p) { return p.id === $scope.lastSelectedPane });
+
+                        if (!nextSelectedPane && panes.length > 0) {
                             if (index < 0)
                                 index = 0
                             else if (index >= panes.length)
