@@ -46,6 +46,7 @@ angular.module('layout', ['idePerspective', 'ideMessageHub'])
                 $scope.centerTabs = [];
                 $scope.selectedCenterTab = null;
                 $scope.selectedBottomTab = null;
+                $scope.layoutSettings = $scope.viewsLayoutModel.layoutSettings || {};
 
                 if ($scope.layoutViews) {
                     $scope.initialOpenViews = $scope.layoutViews.split(',');
@@ -53,8 +54,7 @@ angular.module('layout', ['idePerspective', 'ideMessageHub'])
                     $scope.initialOpenViews = $scope.viewsLayoutModel.views;
                 }
                 let eventHandlers = $scope.viewsLayoutModel.events;
-                //let viewSettings = $scope.viewsLayoutModel.viewSettings;
-                //let layoutSettings = $scope.viewsLayoutModel.layoutSettings;                
+                //let viewSettings = $scope.viewsLayoutModel.viewSettings;                
 
                 Views.get().then(function (views) {
                     $scope.views = views;
@@ -228,9 +228,56 @@ angular.module('layout', ['idePerspective', 'ideMessageHub'])
 
                 this.addPane = function (pane) {
                     $scope.panes.push(pane);
+
+                    $scope.panes.sort(function (a, b) {
+                        var elementA = a.element[0];
+                        var elementB = b.element[0];
+                        if (elementA.previousElementSibling === null || elementB.nextElementSibling === null) return -1;
+                        if (elementA.nextElementSibling === null || elementB.previousElementSibling === null) return 1;
+                        if (elementA.nextElementSibling === elementB || elementB.previousElementSibling === elementA) return -1;
+                        if (elementB.nextElementSibling === elementA || elementA.previousElementSibling === elementB) return 1;
+                        return 0;
+                    });
                 };
 
-                $scope.$watch($scope.panes, function () {
+                this.removePane = function (pane) {
+                    var index = $scope.panes.indexOf(pane);
+                    if (index !== -1) {
+                        $scope.panes.splice(index, 1);
+                    }
+                };
+
+                function calcSizes() {
+                    var currentSizes;
+
+                    if ($scope.split)
+                        currentSizes = $scope.split.getSizes();
+
+                    var sizes = [];
+                    var openPanes = 0;
+                    var totalSize = 0;
+                    for (var i = 0; i < $scope.panes.length; i++) {
+                        var pane = $scope.panes[i];
+                        var size = currentSizes ? currentSizes[i] : pane.size;
+
+                        if (size > 0) openPanes++;
+                        totalSize += size;
+
+                        sizes.push(size);
+                    }
+
+                    if (openPanes > 0 && totalSize < 100) {
+                        var distrSize = (100 - totalSize) / openPanes;
+                        for (var i = 0; i < sizes.length; i++) {
+                            if (sizes[i] > 0)
+                                sizes[i] += distrSize;
+                        }
+                    }
+
+                    return sizes;
+                }
+
+                $scope.$watchCollection('panes', function () {
                     if ($scope.panes.length === 0 || $scope.panes.some(function (a) {
                         return a.element === undefined;
                     })) {
@@ -243,9 +290,7 @@ angular.module('layout', ['idePerspective', 'ideMessageHub'])
                         return;
                     }
 
-                    var sizes = $scope.panes.map(function (pane) {
-                        return pane.size;
-                    });
+                    var sizes = calcSizes();
 
                     var minSizes = $scope.panes.map(function (pane) {
                         return pane.minSize;
@@ -259,7 +304,7 @@ angular.module('layout', ['idePerspective', 'ideMessageHub'])
                         return pane.snapOffset;
                     });
 
-                    Split(elements, {
+                    $scope.split = Split(elements, {
                         direction: $scope.direction,
                         sizes: sizes,
                         minSize: minSizes,
@@ -284,14 +329,18 @@ angular.module('layout', ['idePerspective', 'ideMessageHub'])
                 snapOffset: '@'
             },
             link: function (scope, element, attrs, bgSplitCtrl) {
-                var paneData = {
+                var paneData = scope.paneData = {
                     element: element,
                     size: Number(scope.size),
                     minSize: Number(scope.minSize),
-                    snapOffset: Number(scope.snapOffset),
+                    snapOffset: Number(scope.snapOffset)
                 };
 
                 bgSplitCtrl.addPane(paneData);
+
+                scope.$on('$destroy', function () {
+                    bgSplitCtrl.removePane(paneData);
+                });
             }
         }
     })
@@ -333,7 +382,6 @@ angular.module('layout', ['idePerspective', 'ideMessageHub'])
                     var headersHeight = getHeadersHeight();
 
                     availableHeight = totalHeight - headersHeight;
-                    console.log('availableHeight: ' + availableHeight);
 
                     updateContentHeights();
                 }

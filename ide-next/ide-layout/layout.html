@@ -1,6 +1,7 @@
 <div class="dg-perspective-view">
     <split direction="horizontal" class="split" ng-transclude>
-        <split-pane size="20" min-size="0" snap-offset="100" class="split-pane pane-left" ng-transclude>
+        <split-pane ng-if="explorerTabs.length > 0" size="20" min-size="0" snap-offset="100"
+            class="split-pane pane-left" ng-transclude>
             <explorer-toolbar></explorer-toolbar>
             <accordion>
                 <accordion-pane ng-repeat="view in explorerTabs" view="view"></accordion-pane>
@@ -8,13 +9,15 @@
         </split-pane>
         <split-pane size="80" min-size="100" snap-offset="0" ng-transclude>
             <split direction="vertical" ng-transclude>
-                <split-pane size="70" min-size="0" snap-offset="0" class="split-pane pane-center" ng-transclude>
+                <split-pane ng-if="!layoutSettings.hideEditorsPane" size="70" min-size="0" snap-offset="0"
+                    class="split-pane pane-center" ng-transclude>
                     <tabs closable="true" remove-tab="closeCenterTab(pane)" selected-pane="selectedCenterTab">
                         <tab-pane ng-repeat="tab in centerTabs" id="tab.id" title="tab.label" path="tab.path">
                         </tab-pane>
                     </tabs>
                 </split-pane>
-                <split-pane size="30" min-size="0" snap-offset="100" class="split-pane pane-bottom" ng-transclude>
+                <split-pane ng-if="bottomTabs.length > 0" size="30" min-size="0" snap-offset="100"
+                    class="split-pane pane-bottom" ng-transclude>
                     <tabs selected-pane="selectedBottomTab">
                         <tab-pane ng-repeat="tab in bottomTabs" id="tab.id" title="tab.label" path="tab.path">
                         </tab-pane>

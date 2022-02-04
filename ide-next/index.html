@@ -84,6 +84,9 @@
                         'workspace': { isClosable: false },
                         'import': { isClosable: false }
                     },
+                    layoutSettings: {
+                        hideEditorsPane: false
+                    },
                     events: {
                         'workspace.file.open': function (msg) {
                             Layouts.manager.openEditor(msg.data.file.path, msg.data.file.label, msg.data.file.contentType, msg.data.editor);
