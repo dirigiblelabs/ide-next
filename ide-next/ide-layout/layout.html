@@ -11,14 +11,14 @@
             <split direction="vertical" ng-transclude>
                 <split-pane ng-if="!layoutSettings.hideEditorsPane" size="70" min-size="0" snap-offset="0"
                     class="split-pane pane-center" ng-transclude>
-                    <tabs closable="true" remove-tab="closeCenterTab(pane)" selected-pane="selectedCenterTab">
+                    <tabs closable="true" remove-tab="closeCenterTab(pane)" selected-pane="selection.selectedCenterTab">
                         <tab-pane ng-repeat="tab in centerTabs" id="tab.id" title="tab.label" path="tab.path">
                         </tab-pane>
                     </tabs>
                 </split-pane>
                 <split-pane ng-if="bottomTabs.length > 0" size="30" min-size="0" snap-offset="100"
                     class="split-pane pane-bottom" ng-transclude>
-                    <tabs selected-pane="selectedBottomTab">
+                    <tabs selected-pane="selection.selectedBottomTab">
                         <tab-pane ng-repeat="tab in bottomTabs" id="tab.id" title="tab.label" path="tab.path">
                         </tab-pane>
                     </tabs>

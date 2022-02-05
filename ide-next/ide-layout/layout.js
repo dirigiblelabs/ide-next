@@ -44,9 +44,11 @@ angular.module('layout', ['idePerspective', 'ideMessageHub'])
                 $scope.explorerTabs = [];
                 $scope.bottomTabs = [];
                 $scope.centerTabs = [];
-                $scope.selectedCenterTab = null;
-                $scope.selectedBottomTab = null;
                 $scope.layoutSettings = $scope.viewsLayoutModel.layoutSettings || {};
+                $scope.selection = {
+                    selectedCenterTab: null,
+                    selectedBottomTab: null
+                };
 
                 if ($scope.layoutViews) {
                     $scope.initialOpenViews = $scope.layoutViews.split(',');
@@ -159,7 +161,7 @@ angular.module('layout', ['idePerspective', 'ideMessageHub'])
 
                             let fileTab = $scope.centerTabs.find(function (f) { return f.id === resourcePath });
                             if (fileTab) {
-                                $scope.selectedCenterTab = fileTab.id;
+                                $scope.selection.selectedCenterTab = fileTab.id;
                             } else {
                                 fileTab = {
                                     id: resourcePath,
@@ -167,7 +169,7 @@ angular.module('layout', ['idePerspective', 'ideMessageHub'])
                                     path: src
                                 };
 
-                                $scope.selectedCenterTab = fileTab.id;
+                                $scope.selection.selectedCenterTab = fileTab.id;
                                 $scope.centerTabs.push(fileTab);
                             }
                             $scope.$digest();
@@ -189,20 +191,20 @@ angular.module('layout', ['idePerspective', 'ideMessageHub'])
                             } else if (view.region === 'center-middle' || view.region === 'center-top') {
                                 var centerViewTab = findView($scope.centerTabs, view);
                                 if (centerViewTab) {
-                                    $scope.selectedCenterTab = centerViewTab.id;
+                                    $scope.selection.selectedCenterTab = centerViewTab.id;
                                 } else {
                                     centerViewTab = mapViewToTab(view);
-                                    $scope.selectedCenterTab = centerViewTab.id;
+                                    $scope.selection.selectedCenterTab = centerViewTab.id;
                                     $scope.centerTabs.push(centerViewTab);
                                 }
 
                             } else {
                                 var bottomViewTab = findView($scope.bottomTabs, view);
                                 if (bottomViewTab) {
-                                    $scope.selectedBottomTab = bottomViewTab.id;
+                                    $scope.selection.selectedBottomTab = bottomViewTab.id;
                                 } else {
                                     bottomViewTab = mapViewToTab(view);
-                                    $scope.selectedBottomTab = bottomViewTab.id;
+                                    $scope.selection.selectedBottomTab = bottomViewTab.id;
                                     $scope.bottomTabs.push(bottomViewTab);
                                 }
                             }
@@ -488,7 +490,6 @@ angular.module('layout', ['idePerspective', 'ideMessageHub'])
                     if (this.isPaneSelected(pane))
                         return;
 
-                    $scope.lastSelectedPane = $scope.selectedPane;
                     $scope.selectedPane = pane.id;
                 }
 
@@ -537,10 +538,9 @@ angular.module('layout', ['idePerspective', 'ideMessageHub'])
                 this.getSelectedPane = function () {
                     return $scope.selectedPane;
                 }
-            },
-            link: function (scope, element) {
-                Scrollbar.init(element.children()[0], {
-                    damping: 0.5
+
+                $scope.$watch('selectedPane', function (newValue, oldValue) {
+                    $scope.lastSelectedPane = oldValue;
                 });
             },
             templateUrl: 'ide-layout/tabs.html'

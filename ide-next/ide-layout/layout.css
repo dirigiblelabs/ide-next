@@ -88,11 +88,6 @@ iframe {
   outline: 0;
 }
 
-.pane-center .fd-tabs-scrollable .scroll-content {
-  background-color: transparent;
-  /*#252525;*/
-}
-
 .tabs-container {
   display: flex;
   flex-direction: column;
@@ -130,30 +125,25 @@ iframe {
   white-space: nowrap;
 }
 
-.fd-tabs-scrollable {
-  flex-shrink: 0
-}
-
-.fd-tabs-scrollable:hover .scrollbar-track {
-  opacity: 1;
-}
-
-.fd-tabs-scrollable .scrollbar-track {
-  background: transparent;
-}
-.fd-tabs-scrollable .scrollbar-thumb {
-  background: var(--sapScrollBar_FaceColor, #ccc);
-  height: 3px;
-}
-
-.fd-tabs-scrollable .scrollbar-track-x {
-  height: 3px;
-}
-
 .fd-tabs {
   flex-wrap: nowrap;
   display: inline-flex;
   box-shadow: none;
+  flex-shrink: 0;
+  overflow-x: auto;
+  /* IE and Edge */
+  -ms-overflow-style: none;
+  /* Firefox */
+  scrollbar-width: none;
+}
+
+.fd-tabs::-webkit-scrollbar {
+  display: none;
+}
+
+.fd-tabs__panel {
+  height: 100%;
+  overflow: hidden;
 }
 
 .fd-tabs__panel {
