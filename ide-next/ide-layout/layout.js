@@ -1,5 +1,9 @@
 
 angular.module('layout', ['idePerspective', 'ideMessageHub'])
+    .constant('SplitPaneState', {
+        EXPANDED: 0,
+        COLLAPSED: 1
+    })
     .factory('Views', ['$resource', function ($resource) {
         let get = function () {
             return $resource('/services/v4/js/ide-core/services/views.js').query().$promise
@@ -31,7 +35,7 @@ angular.module('layout', ['idePerspective', 'ideMessageHub'])
             get: get
         };
     }])
-    .directive('ideLayout', ['Views', 'Layouts', 'Editors', 'messageHub', function (Views, Layouts, Editors, messageHub) {
+    .directive('ideLayout', ['Views', 'Layouts', 'Editors', 'SplitPaneState', 'messageHub', function (Views, Layouts, Editors, SplitPaneState, messageHub) {
         return {
             restrict: 'E',
             replace: true,
@@ -49,6 +53,9 @@ angular.module('layout', ['idePerspective', 'ideMessageHub'])
                     selectedCenterTab: null,
                     selectedBottomTab: null
                 };
+                $scope.splitPanesState = {
+                    main: []
+                }
 
                 if ($scope.layoutViews) {
                     $scope.initialOpenViews = $scope.layoutViews.split(',');
@@ -97,6 +104,44 @@ angular.module('layout', ['idePerspective', 'ideMessageHub'])
                     var index = $scope.centerTabs.findIndex(function (f) { return f.path === pane.path });
                     if (index >= 0)
                         $scope.centerTabs.splice(index, 1);
+                }
+
+                $scope.collapseBottomPane = function () {
+                    updateSplitPanesState({
+                        editorsPaneState: SplitPaneState.EXPANDED,
+                        bottomPanesState: SplitPaneState.COLLAPSED
+                    });
+                }
+
+                $scope.expandBottomPane = function () {
+                    updateSplitPanesState({
+                        editorsPaneState: SplitPaneState.EXPANDED,
+                        bottomPanesState: SplitPaneState.EXPANDED
+                    });
+                }
+
+                $scope.toggleEditorsPane = function () {
+                    var editorsPaneCollapsed = $scope.isEditorsPaneCollapsed();
+
+                    updateSplitPanesState({
+                        editorsPaneState: editorsPaneCollapsed ? SplitPaneState.EXPANDED : SplitPaneState.COLLAPSED,
+                        bottomPanesState: SplitPaneState.EXPANDED
+                    });
+                }
+
+                $scope.isEditorsPaneCollapsed = function () {
+                    return $scope.splitPanesState.main[0] == SplitPaneState.COLLAPSED;
+                }
+
+                $scope.isBottomPaneCollapsed = function () {
+                    return $scope.splitPanesState.main.length < 2 || $scope.splitPanesState.main[1] == SplitPaneState.COLLAPSED;
+                }
+
+                function updateSplitPanesState(args) {
+                    if ($scope.splitPanesState.main.length > 1) {
+                        $scope.splitPanesState.main[0] = args.editorsPaneState;
+                        $scope.splitPanesState.main[1] = args.bottomPanesState;
+                    }
                 }
 
                 function findView(views, view) {
@@ -207,6 +252,9 @@ angular.module('layout', ['idePerspective', 'ideMessageHub'])
                                     $scope.selection.selectedBottomTab = bottomViewTab.id;
                                     $scope.bottomTabs.push(bottomViewTab);
                                 }
+
+                                if ($scope.isBottomPaneCollapsed())
+                                    $scope.expandBottomPane();
                             }
                         }
                     }
@@ -215,7 +263,7 @@ angular.module('layout', ['idePerspective', 'ideMessageHub'])
             templateUrl: 'ide-layout/layout.html'
         };
     }])
-    .directive('split', function () {
+    .directive('split', ['SplitPaneState', function (SplitPaneState) {
         return {
             restrict: 'E',
             replace: true,
@@ -223,13 +271,16 @@ angular.module('layout', ['idePerspective', 'ideMessageHub'])
             scope: {
                 direction: '@',
                 width: '@',
-                height: '@'
+                height: '@',
+                state: '=?'
             },
             controller: ['$scope', function ($scope) {
                 $scope.panes = [];
+                $scope.state = $scope.state || [];
 
                 this.addPane = function (pane) {
                     $scope.panes.push(pane);
+                    $scope.state.push(SplitPaneState.EXPANDED);
 
                     $scope.panes.sort(function (a, b) {
                         var elementA = a.element[0];
@@ -249,34 +300,22 @@ angular.module('layout', ['idePerspective', 'ideMessageHub'])
                     }
                 };
 
-                function calcSizes() {
-                    var currentSizes;
-
-                    if ($scope.split)
-                        currentSizes = $scope.split.getSizes();
-
-                    var sizes = [];
-                    var openPanes = 0;
-                    var totalSize = 0;
-                    for (var i = 0; i < $scope.panes.length; i++) {
-                        var pane = $scope.panes[i];
-                        var size = currentSizes ? currentSizes[i] : pane.size;
-
-                        if (size > 0) openPanes++;
-                        totalSize += size;
-
-                        sizes.push(size);
+                function normalizeSizes(sizes, index = undefined) {
+                    var isOpen = function (size, i) {
+                        return Math.floor(size) > 0 && (index === undefined || index !== i);
                     }
 
-                    if (openPanes > 0 && totalSize < 100) {
-                        var distrSize = (100 - totalSize) / openPanes;
-                        for (var i = 0; i < sizes.length; i++) {
-                            if (sizes[i] > 0)
-                                sizes[i] += distrSize;
+                    var totalSize = sizes.reduce(function (x, y) { return x + y }, 0);
+                    if (totalSize !== 100) {
+                        var openCount = sizes.reduce(function (count, size, i) { return isOpen(size, i) ? count + 1 : count; }, 0);
+                        if (openCount > 0) {
+                            var d = (100 - totalSize) / openCount;
+                            for (var i = 0; i < sizes.length; i++) {
+                                if (isOpen(sizes[i], i))
+                                    sizes[i] += d;
+                            }
                         }
                     }
-
-                    return sizes;
                 }
 
                 $scope.$watchCollection('panes', function () {
@@ -292,7 +331,11 @@ angular.module('layout', ['idePerspective', 'ideMessageHub'])
                         return;
                     }
 
-                    var sizes = calcSizes();
+                    var sizes = $scope.panes.map(function (pane) {
+                        return pane.size || 0;
+                    });
+
+                    normalizeSizes(sizes);
 
                     var minSizes = $scope.panes.map(function (pane) {
                         return pane.minSize;
@@ -313,12 +356,51 @@ angular.module('layout', ['idePerspective', 'ideMessageHub'])
                         expandToMin: true,
                         gutterSize: 4,
                         gutterAlign: 'start',
-                        snapOffset: snapOffsets
+                        snapOffset: snapOffsets,
+                        onDragEnd: function (newSizes) {
+                            for (var i = 0; i < newSizes.length; i++) {
+                                $scope.state[i] = Math.floor(newSizes[i]) === 0 ? SplitPaneState.COLLAPSED : SplitPaneState.EXPANDED;
+                            }
+                            $scope.$apply();
+                        },
                     });
+                });
+
+                $scope.$watchCollection('state', function (newState, oldState) {
+                    if (newState.length === oldState.length) {
+                        //Process the collapsing first
+                        for (var i = 0; i < newState.length; i++) {
+                            if (newState[i] !== oldState[i]) {
+                                if (newState[i] === SplitPaneState.COLLAPSED) {
+                                    var sizes = $scope.split.getSizes();
+                                    var size = Math.floor(sizes[i]);
+                                    if (size > 0) {
+                                        $scope.panes[i].lastSize = size;
+                                        $scope.split.collapse(i);
+                                    }
+                                }
+                            }
+                        }
+                        // ... and then the expanding/restore if necessary
+                        for (var i = 0; i < newState.length; i++) {
+                            if (newState[i] !== oldState[i]) {
+                                if (newState[i] === SplitPaneState.EXPANDED) {
+                                    var sizes = $scope.split.getSizes();
+                                    var size = Math.floor(sizes[i]);
+                                    if (size === 0) {
+                                        var pane = $scope.panes[i];
+                                        sizes[i] = pane.lastSize || pane.size;
+                                        normalizeSizes(sizes, i);
+                                        $scope.split.setSizes(sizes);
+                                    }
+                                }
+                            }
+                        }
+                    }
                 });
             }]
         };
-    })
+    }])
     .directive('splitPane', function () {
         return {
             restrict: 'E',
@@ -472,7 +554,10 @@ angular.module('layout', ['idePerspective', 'ideMessageHub'])
     .directive('tabs', function () {
         return {
             restrict: 'E',
-            transclude: true,
+            transclude: {
+                'buttons': '?buttons',
+                'panes': 'panes'
+            },
             replace: true,
             scope: {
                 selectedPane: '=',
