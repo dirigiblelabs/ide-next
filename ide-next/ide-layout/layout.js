@@ -35,6 +35,24 @@ angular.module('layout', ['idePerspective', 'ideMessageHub'])
             get: get
         };
     }])
+    .directive('view', ['Views', function (Views) {
+        return {
+            restrict: 'E',
+            replace: true,
+            scope: {
+                name: '@',
+                settings: '=',
+            },
+            link: function (scope, element, attrs) {
+                Views.get().then(function (views) {
+                    var view = views.find(function (v) { return v.id === scope.name });
+                    if (view)
+                        scope.path = view.settings.path;
+                });
+            },
+            templateUrl: 'ide-layout/view.html'
+        }
+    }])
     .directive('ideLayout', ['Views', 'Layouts', 'Editors', 'SplitPaneState', 'messageHub', function (Views, Layouts, Editors, SplitPaneState, messageHub) {
         return {
             restrict: 'E',

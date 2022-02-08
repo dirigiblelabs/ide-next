@@ -9,7 +9,7 @@
   ~ SAP - initial API and implementation
   -->
 
-<html lang="en" ng-app="workbench" ng-controller="WorkbenchController as wb">
+<html lang="en" ng-app="singleView" ng-controller="SingleViewController as sv">
 
     <head>
 
@@ -17,7 +17,7 @@
         <meta http-equiv="X-UA-Compatible" content="IE=edge">
         <meta name="viewport" content="width=device-width, initial-scale=1">
 
-        <title brandtitle perspective-name="Workspace">Workspace</title>
+        <title brandtitle perspective-name="SingleView">Single View</title>
 
         <link rel="icon" href="data:;base64,iVBORw0KGgo=" brandicon />
 
@@ -59,69 +59,34 @@
         <!-- Top IDE panel and it's contents -->
         <ide-header menu-data-url="/services/v4/js/ide-next/services/menu/menu.js"></ide-header>
 
-        <ide-container active-id="workbench-next">
-            <ide-layout id="workbench-next" views-layout-model="wb.layoutModel"></ide-layout>
+        <ide-container active-id="single-view-perspective">
+            <split direction="horizontal" class="split" ng-transclude>
+                <split-pane size="50" min-size="0" snap-offset="100" class="split-pane" ng-transclude>
+                    <view name="welcome"></view>
+                </split-pane>
+                <split-pane size="50" min-size="0" snap-offset="100" class="split-pane" ng-transclude>
+                    <view name="about"></view>
+                </split-pane>
+            </split>
         </ide-container>
-
+        <!--
+        <ide-container active-id="single-view-perspective">
+            <view name="welcome"></view>
+        </ide-container>
+-->
         <!-- Alert dialog Overlay for alerts, notifications, dialogs -->
         <ide-dialogs></ide-dialogs>
         <!-- Bottom IDE status bar -->
         <ide-status-bar class="statusbar"></ide-status-bar>
 
         <script type="text/javascript">
-            let dirtyFiles = [];
-
-        angular.module('workbench', ['ngResource', 'layout', 'ideUI'])
+            angular.module('singleView', ['ngResource', 'layout', 'ideUI'])
             .config(["messageHubProvider", function (messageHubProvider) {
-                messageHubProvider.evtNamePrefix = 'workbench';
+                messageHubProvider.evtNamePrefix = 'singleview';
             }])
-            .controller('WorkbenchController', ['Layouts', function (Layouts) {
+            .controller('SingleViewController', function () {
 
-                this.layoutModel = {
-                    views: ['welcome', 'workspace', 'import', 'properties', 'console', 'preview', 'problems'],
-                    viewSettings: {
-                        'workspace': { isClosable: false },
-                        'import': { isClosable: false }
-                    },
-                    layoutSettings: {
-                        hideEditorsPane: false
-                    },
-                    events: {
-                        'workspace.file.open': function (msg) {
-                            Layouts.manager.openEditor(msg.data.file.path, msg.data.file.label, msg.data.file.contentType, msg.data.editor);
-                        },
-                        'workspace.file.deleted': function (msg) {
-                            //TODO: check if deleted file is currently open in editor and close the editor window
-                            console.log('file deleted recieved:' + msg);
-                        },
-                        'ide.perspective.views.open': function (msg) {
-                            Layouts.manager.open(msg.data.viewId, msg.data.regionId);
-                        },
-                        'workbench.open': function (msg) {
-                            window.open(msg.data, '_blank');
-                        },
-                        'workbench.alert': function (msg) {
-                            alert(msg.data);
-                        },
-                        'editor.file.dirty': function (msg) {
-                            dirtyFiles.push(msg.data);
-                            Layouts.manager.setEditorDirty(msg.data, true);
-                        },
-                        'editor.file.saved': function (msg) {
-                            dirtyFiles = dirtyFiles.filter(e => e !== msg.data);
-                            Layouts.manager.setEditorDirty(msg.data, false);
-                        }
-                    }
-                };
-
-            }]);
-
-        window.addEventListener('beforeunload', function (e) {
-            if (dirtyFiles.length > 0) {
-                e.preventDefault();
-                e.returnValue = '';
-            }
-        });
+            });
         </script>
 
     </body>
