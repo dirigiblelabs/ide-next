@@ -1,10 +1,11 @@
 <div class="tabs-container">
   <div class="tabs-list-container">
     <ul class="fd-tabs fd-tabs-closable" role="tablist">
-      <li ng-repeat="pane in panes" aria-selected="{{isPaneSelected(pane)}}" role="tab" class="fd-tabs__item">
+      <li ng-repeat="pane in panes" aria-selected="{{isPaneSelected(pane)}}" role="tab" class="fd-tabs__item"
+        ng-class="{'dirty': pane.dirty}">
         <a class="fd-tabs__link" href="" ng-click="tabClick(pane, $event)">
           <span class="fd-tabs__tag">
-            {{pane.title}}
+            {{pane.label}}
             <button ng-show="closable"
               class="fd-button fd-button--transparent fd-button--compact fd-message-strip__close" aria-label="Close">
               <i class="sap-icon--decline"></i>

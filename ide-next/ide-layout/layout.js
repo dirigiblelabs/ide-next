@@ -53,7 +53,7 @@ angular.module('layout', ['idePerspective', 'ideMessageHub'])
             templateUrl: 'ide-layout/view.html'
         }
     }])
-    .directive('ideLayout', ['Views', 'Layouts', 'Editors', 'SplitPaneState', 'messageHub', function (Views, Layouts, Editors, SplitPaneState, messageHub) {
+    .directive('ideLayout', ['Views', 'Layouts', 'Editors', 'SplitPaneState', 'messageHub', '$timeout', function (Views, Layouts, Editors, SplitPaneState, messageHub, $timeout) {
         return {
             restrict: 'E',
             replace: true,
@@ -118,10 +118,8 @@ angular.module('layout', ['idePerspective', 'ideMessageHub'])
                     }
                 });
 
-                $scope.closeCenterTab = function (pane) {
-                    var index = $scope.centerTabs.findIndex(function (f) { return f.path === pane.path });
-                    if (index >= 0)
-                        $scope.centerTabs.splice(index, 1);
+                $scope.closeCenterTab = function (tab) {
+                    tryCloseCenterTabs([tab]);
                 }
 
                 $scope.collapseBottomPane = function () {
@@ -176,11 +174,99 @@ angular.module('layout', ['idePerspective', 'ideMessageHub'])
                     };
                 }
 
+                function findCenterTabIndex(id) {
+                    return $scope.centerTabs.findIndex(function (f) { return f.id === id });
+                }
+
+                function tryCloseCenterTabs(tabs) {
+                    var dirtyFiles = tabs.filter(function (tab) { return tab.dirty });
+                    if (dirtyFiles.length > 0) {
+
+                        var tab = dirtyFiles[0];
+                        $scope.selection.selectedCenterTab = tab.id;
+
+                        messageHub.showDialog(
+                            'You have unsaved changes',
+                            'Do you want to save the changes you made to ' + tab.label + '?',
+                            [{
+                                id: { id: 'save', file: tab.id, tabs: tabs },
+                                type: 'normal',
+                                label: 'Save',
+                            }, {
+                                id: { id: 'ignore', file: tab.id, tabs: tabs },
+                                type: 'normal',
+                                label: 'Don\'t Save',
+                            }, {
+                                id: { id: 'cancel' },
+                                type: 'transparent',
+                                label: 'Cancel',
+                            }],
+                            'layout.dialog.close'
+                        );
+                    } else {
+                        for (var i = 0; i < tabs.length; i++) {
+                            var tab = tabs[i];
+                            var index = findCenterTabIndex(tab.id);
+                            $scope.centerTabs.splice(index, 1);
+                        }
+
+                        return true;
+                    }
+
+                    return false;
+                }
+
+                function closeCenterTab(id) {
+                    var index = findCenterTabIndex(id);
+                    if (index >= 0) {
+                        $scope.centerTabs.splice(index, 1);
+                        $scope.$digest();
+                    }
+                }
+
+                let closingFileArgs;
+
+                messageHub.onDidReceiveMessage('layout.dialog.close', function (msg) {
+                    var args = msg.data;
+                    switch (args.id) {
+                        case 'save':
+                            closingFileArgs = args;
+                            messageHub.postMessage('workbench.editor.save', { file: args.file }, true);
+                            break;
+                        case 'ignore':
+                            closeCenterTab(args.file)
+                            messageHub.postMessage('editor.file.dirty', { file: args.file, isDirty: false }, true);
+
+                            var rest = args.tabs.filter(function (x) { return x.id !== args.file });
+                            if (rest.length > 0)
+                                if (tryCloseCenterTabs(rest)) {
+                                    $scope.$digest();
+                                }
+
+                            break;
+                    }
+                });
+
+                messageHub.onDidReceiveMessage('editor.file.saved', function (msg) {
+                    if (!closingFileArgs) return;
+
+                    var fileName = msg.data;
+                    if (fileName === closingFileArgs.file) {
+                        $timeout(function () {
+                            closeCenterTab(fileName);
+
+                            var rest = closingFileArgs.tabs.filter(function (x) { return x.id !== closingFileArgs.file });
+                            if (rest.length > 0)
+                                tryCloseCenterTabs(rest);
+
+                            closingFileArgs = null;
+                        }, 100);
+                    }
+                });
+
                 Layouts.manager = {
                     openEditor: function (resourcePath, resourceLabel, contentType, editorId = "editor", extraArgs = null) {
                         if (resourcePath) {
-                            let src;
-
                             let editorPath = Editors.editorProviders[editorId];
                             if (!editorPath) {
                                 let editors = Editors.editorsForContentType[contentType];
@@ -207,20 +293,13 @@ angular.module('layout', ['idePerspective', 'ideMessageHub'])
                                 editorPath = Editors.editorProviders[editorId];
                             }
 
+                            var params = Object.assign({
+                                file: resourcePath,
+                                contentType: contentType
+                            }, extraArgs || {});
+
                             if (editorId === 'flowable')
-                                src = editorPath + resourcePath;
-                            else
-                                src = editorPath + '?file=' + resourcePath;
-
-                            if (contentType && editorId !== 'flowable')
-                                src += "&contentType=" + contentType;
-
-                            if (extraArgs) {
-                                const extraArgsKeys = Object.keys(extraArgs);
-                                for (let i = 0; i < extraArgsKeys.length; i++) {
-                                    src += `&${extraArgsKeys[i]}=${encodeURIComponent(extraArgs[extraArgsKeys[i]])}`;
-                                }
-                            }
+                                editorPath += resourcePath;
 
                             let fileTab = $scope.centerTabs.find(function (f) { return f.id === resourcePath });
                             if (fileTab) {
@@ -229,12 +308,43 @@ angular.module('layout', ['idePerspective', 'ideMessageHub'])
                                 fileTab = {
                                     id: resourcePath,
                                     label: resourceLabel,
-                                    path: src
+                                    path: editorPath,
+                                    params: params
                                 };
 
                                 $scope.selection.selectedCenterTab = fileTab.id;
                                 $scope.centerTabs.push(fileTab);
                             }
+                            $scope.$digest();
+                        }
+                    },
+                    closeEditor: function (resourcePath) {
+                        var index = findCenterTabIndex(resourcePath);
+                        if (index >= 0) {
+                            var tab = $scope.centerTabs[index];
+                            if (tryCloseCenterTabs([tab])) {
+                                $scope.$digest();
+                            }
+                        }
+                    },
+                    closeOtherEditors: function (resourcePath) {
+                        var rest = $scope.centerTabs.filter(function (x) { return x.id !== resourcePath });
+                        if (rest.length > 0) {
+                            if (tryCloseCenterTabs(rest)) {
+                                $scope.$digest();
+                            }
+                        }
+                    },
+                    closeAllEditors: function () {
+                        if (tryCloseCenterTabs($scope.centerTabs)) {
+                            $scope.selection.selectedCenterTab = null;
+                            $scope.$digest();
+                        }
+                    },
+                    setEditorDirty: function (resourcePath, dirty) {
+                        let fileTab = $scope.centerTabs.find(function (f) { return f.id === resourcePath });
+                        if (fileTab) {
+                            fileTab.dirty = dirty;
                             $scope.$digest();
                         }
                     },
@@ -277,6 +387,7 @@ angular.module('layout', ['idePerspective', 'ideMessageHub'])
                         }
                     }
                 };
+                Layouts.manager.open = Layouts.manager.openView;
             }],
             templateUrl: 'ide-layout/layout.html'
         };
@@ -450,7 +561,18 @@ angular.module('layout', ['idePerspective', 'ideMessageHub'])
         return {
             restrict: 'E',
             replace: true,
-            templateUrl: 'ide-layout/toolbar.html'
+            templateUrl: 'ide-layout/toolbar.html',
+            link: function (scope, element, attrs) {
+                scope.hidden = true;
+
+                scope.toggle = function () {
+                    scope.hidden = !scope.hidden;
+                };
+
+                scope.hide = function () {
+                    scope.hidden = true;
+                }
+            }
         };
     })
     .directive('accordion', ['$window', function ($window) {
@@ -656,19 +778,21 @@ angular.module('layout', ['idePerspective', 'ideMessageHub'])
             replace: true,
             require: '^tabs',
             scope: {
-                title: '<',
-                path: '<',
-                id: '<'
+                tab: '='
             },
             link: function (scope, element, attrs, tabsCtrl) {
-                tabsCtrl.addPane(scope);
+                tabsCtrl.addPane(scope.tab);
 
                 scope.isPaneSelected = function () {
-                    return scope.id === tabsCtrl.getSelectedPane();
+                    return scope.tab.id === tabsCtrl.getSelectedPane();
+                }
+
+                scope.getParams = function () {
+                    return scope.tab.params ? JSON.stringify(scope.tab.params) : '';
                 }
 
                 scope.$on('$destroy', function () {
-                    tabsCtrl.removePane(scope);
+                    tabsCtrl.removePane(scope.tab);
                 });
             },
             templateUrl: 'ide-layout/tabPane.html'

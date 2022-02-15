@@ -88,11 +88,10 @@
                     },
                     events: {
                         'workspace.file.open': function (msg) {
-                            Layouts.manager.openEditor(msg.data.file.path, msg.data.file.label, msg.data.file.contentType, msg.data.editor);
+                            Layouts.manager.openEditor(msg.data.file.path, msg.data.file.label, msg.data.file.contentType, msg.data.editor, msg.data.extraArgs);
                         },
                         'workspace.file.deleted': function (msg) {
-                            //TODO: check if deleted file is currently open in editor and close the editor window
-                            console.log('file deleted recieved:' + msg);
+                            //Layouts.manager.closeEditor(msg.data.file.path);
                         },
                         'ide.perspective.views.open': function (msg) {
                             Layouts.manager.open(msg.data.viewId, msg.data.regionId);
@@ -104,8 +103,22 @@
                             alert(msg.data);
                         },
                         'editor.file.dirty': function (msg) {
-                            dirtyFiles.push(msg.data);
-                            Layouts.manager.setEditorDirty(msg.data, true);
+                            var file, isDirty;
+                            if (typeof msg.data === 'string') {
+                                file = msg.data;
+                                isDirty = true;
+                            } else {
+                                file = msg.data.file;
+                                isDirty = msg.data.isDirty;
+                            }
+
+                            if (isDirty) {
+                                dirtyFiles.push(file);
+                            } else {
+                                dirtyFiles = dirtyFiles.filter(e => e !== file);
+                            }
+
+                            Layouts.manager.setEditorDirty(file, isDirty);
                         },
                         'editor.file.saved': function (msg) {
                             dirtyFiles = dirtyFiles.filter(e => e !== msg.data);
@@ -115,13 +128,13 @@
                 };
 
             }]);
-
+        
         window.addEventListener('beforeunload', function (e) {
             if (dirtyFiles.length > 0) {
                 e.preventDefault();
                 e.returnValue = '';
             }
-        });
+        });        
         </script>
 
     </body>

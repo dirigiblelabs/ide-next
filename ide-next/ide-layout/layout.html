@@ -13,7 +13,7 @@
                     class="split-pane pane-center" ng-transclude>
                     <tabs closable="true" remove-tab="closeCenterTab(pane)" selected-pane="selection.selectedCenterTab">
                         <panes>
-                            <tab-pane ng-repeat="tab in centerTabs" id="tab.id" title="tab.label" path="tab.path">
+                            <tab-pane ng-repeat="tab in centerTabs" tab="tab">
                             </tab-pane>
                         </panes>
                     </tabs>
@@ -33,7 +33,7 @@
                             </button>
                         </buttons>
                         <panes>
-                            <tab-pane ng-repeat="tab in bottomTabs" id="tab.id" title="tab.label" path="tab.path">
+                            <tab-pane ng-repeat="tab in bottomTabs" tab="tab">
                             </tab-pane>
                         </panes>
                     </tabs>

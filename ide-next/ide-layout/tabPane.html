@@ -1,3 +1,3 @@
 <div aria-expanded="{{isPaneSelected()}}" class="fd-tabs__panel" role="tabpanel" ng-transclude>
-    <iframe src="{{path}}"></iframe>
+    <iframe src="{{tab.path}}" data-parameters="{{getParams()}}"></iframe>
 </div>
