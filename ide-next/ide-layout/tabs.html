@@ -3,7 +3,7 @@
     <ul class="fd-tabs fd-tabs-closable" role="tablist">
       <li ng-repeat="pane in panes" aria-selected="{{isPaneSelected(pane)}}" role="tab" class="fd-tabs__item"
         ng-class="{'dirty': pane.dirty}">
-        <a class="fd-tabs__link" href="" ng-click="tabClick(pane, $event)">
+        <a class="fd-tabs__link" href="" ng-click="tabClick(pane, $event)" title="{{pane.id}}">
           <span class="fd-tabs__tag">
             {{pane.label}}
             <button ng-show="closable"
