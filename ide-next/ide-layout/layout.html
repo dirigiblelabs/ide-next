@@ -1,5 +1,5 @@
 <div class="dg-perspective-view">
-    <split direction="horizontal" class="split" ng-transclude>
+    <split direction="horizontal" ng-transclude>
         <split-pane ng-if="explorerTabs.length > 0" size="20" min-size="0" snap-offset="100"
             class="split-pane pane-left" ng-transclude>
             <explorer-toolbar></explorer-toolbar>
@@ -11,12 +11,11 @@
             <split direction="vertical" state="splitPanesState.main" ng-transclude>
                 <split-pane ng-if="!layoutSettings.hideEditorsPane" size="70" min-size="0" snap-offset="0"
                     class="split-pane pane-center" ng-transclude>
-                    <tabs closable="true" remove-tab="closeCenterTab(pane)" selected-pane="selection.selectedCenterTab">
-                        <panes>
-                            <tab-pane ng-repeat="tab in centerTabs" tab="tab">
-                            </tab-pane>
-                        </panes>
-                    </tabs>
+
+                    <splitted-tabs direction="centerSplittedTabViews.direction" panes="centerSplittedTabViews.panes"
+                        remove-tab="closeCenterTab(pane)" move-tab="moveCenterTab(pane)" ng-transclude>
+                    </splitted-tabs>
+
                 </split-pane>
                 <split-pane ng-if="bottomTabs.length > 0" size="30" min-size="0" snap-offset="100"
                     class="split-pane pane-bottom" ng-transclude>

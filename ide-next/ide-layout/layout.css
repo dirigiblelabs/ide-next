@@ -17,8 +17,6 @@ iframe {
 
 .pane-center {
   background-color: transparent;
-  display: flex;
-  flex-direction: column;
 }
 
 .pane-bottom {
@@ -28,7 +26,14 @@ iframe {
 .split {
   height: 100%;
   display: flex;
+}
+
+.split.horizontal {
   flex-direction: row;
+}
+
+.split.vertical {
+  flex-direction: column;
 }
 
 .gutter {
@@ -254,4 +259,8 @@ iframe {
 
 .split-pane-buttons .fd-button--compact>i {
   font-size: 0.75rem;
+}
+
+.splitted-tabs {
+  height: 100%;
 }
