@@ -1,1 +1,5 @@
-{"module":"ide-next/services/menu/file","extensionPoint":"ide-next-menu","description":"File Menu"}
+{
+    "module": "ide-next/services/menu/file.js",
+    "extensionPoint": "ide-next-menu",
+    "description": "File Menu"
+}

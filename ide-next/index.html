@@ -17,45 +17,42 @@
         <meta http-equiv="X-UA-Compatible" content="IE=edge">
         <meta name="viewport" content="width=device-width, initial-scale=1">
 
-        <title brandtitle perspective-name="Workspace">Workspace</title>
+        <link rel="icon" href="data:;base64,iVBORw0KGgo=" dg-brand-icon />
 
-        <link rel="icon" href="data:;base64,iVBORw0KGgo=" brandicon />
+        <title dg-brand-title></title>
 
-        <!-- jQuery -->
+        <!-- Perspective data -->
+        <script type="text/javascript" src="/services/v4/web/ide-next/services/workbench.js"></script>
+
         <script type="text/javascript" src="/webjars/jquery/3.6.0/jquery.min.js"></script>
-
-        <!-- AngularJS -->
         <script type="text/javascript" src="/webjars/angularjs/1.8.2/angular.min.js"></script>
         <script type="text/javascript" src="/webjars/angularjs/1.8.2/angular-resource.min.js"></script>
         <script type="text/javascript" src="/webjars/angular-aria/1.8.2/angular-aria.min.js"></script>
-
-        <!-- Fundamental-styles -->
         <link type="text/css" rel="stylesheet" href="/webjars/fundamental-styles/0.23.0/dist/fundamental-styles.css">
         <theme></theme>
-
-        <!-- Dirigible styles -->
         <link type="text/css" rel="stylesheet" href="/services/v4/web/resources/styles/core.css" />
         <link type="text/css" rel="stylesheet" href="/services/v4/web/resources/styles/perspective.css" />
-        <link type="text/css" rel="stylesheet" href="/services/v4/web/resources/styles/layout.css" />
+        <link type="text/css" rel="stylesheet" href="/services/v4/web/ide-next/ide-layout/layout.css" />
+        <link type="text/css" rel="stylesheet" href="/services/v4/web/resources/styles/widgets.css" />
 
-        <!-- MessageHub -->
         <script type="text/javascript" src="/services/v4/web/ide-core/core/message-hub.js"></script>
         <script type="text/javascript" src="/services/v4/web/ide-core/core/ide-message-hub.js"></script>
 
-        <!-- IDE Core UI -->
+        <script type="text/javascript" src="/services/v4/web/ide-branding/branding.js"></script>
         <script type="text/javascript" src="/webjars/split.js/1.6.5/dist/split.min.js"></script>
+        <script type="text/javascript" src="/services/v4/web/ide-core/ui/editors.js"></script>
         <script type="text/javascript" src="/services/v4/web/ide-core/ui/core-modules.js"></script>
-        <script type="text/javascript" src="/services/v4/web/ide-core/ui/layout.js"></script>
-        <script type="text/javascript" src="/services/v4/web/ide-core/ui/views.js"></script>
-
+        <script type="text/javascript" src="/services/v4/web/ide-core/ui/theming.js"></script>
+        <script type="text/javascript" src="/services/v4/web/ide-next/ide-layout/layout.js"></script>
+        <script type="text/javascript" src="/services/v4/web/ide-core/ui/widgets.js"></script>
     </head>
 
     <body>
-        <!-- Top IDE panel and it's contents -->
-        <ide-header menu-data-url="/services/v4/js/ide-next/services/menu/menu.js"></ide-header>
+        <ide-header menu-data-url="/services/v4/js/ide-core/services/menu.js"></ide-header>
+        <ide-contextmenu></ide-contextmenu>
 
-        <ide-container active-id="workbench-next">
-            <ide-layout id="workbench-next" name="Workbench Next" views-layout-model="wb.layoutModel"></ide-layout>
+        <ide-container>
+            <ide-layout ng-ref="layout" views-layout-model="wb.layoutModel"></ide-layout>
         </ide-container>
 
         <!-- Alert dialog Overlay for alerts, notifications, dialogs -->
@@ -66,70 +63,17 @@
         <script type="text/javascript">
             let dirtyFiles = [];
 
-        angular.module('workbench', ['ngResource', 'layout', 'ideUI'])
+        angular.module('workbench', ["ngResource", "ideLayout", "ideUI"])
             .config(["messageHubProvider", function (messageHubProvider) {
                 messageHubProvider.evtNamePrefix = 'workbench';
             }])
-            .controller('WorkbenchController', ['Layouts', function (Layouts) {
+            .controller('WorkbenchController', ["$scope", "messageHub", function ($scope, messageHub) {
 
                 this.layoutModel = {
-                    views: ['welcome', 'workspace', 'import', 'properties', 'console', 'preview', 'problems'],
-                    viewSettings: {
-                        'workspace': { isClosable: false },
-                        'import': { isClosable: false }
-                    },
-                    layoutSettings: {
-                        hideEditorsPane: false
-                    },
-                    events: {
-                        'workspace.file.open': function (msg) {
-                            Layouts.manager.openEditor(msg.data.file.path, msg.data.file.label, msg.data.file.contentType, msg.data.editor, msg.data.extraArgs);
-                        },
-                        'workspace.file.deleted': function (msg) {
-                            //Layouts.manager.closeEditor(msg.data.file.path);
-                        },
-                        'ide.perspective.views.open': function (msg) {
-                            Layouts.manager.open(msg.data.viewId, msg.data.regionId);
-                        },
-                        'workbench.open': function (msg) {
-                            window.open(msg.data, '_blank');
-                        },
-                        'workbench.alert': function (msg) {
-                            alert(msg.data);
-                        },
-                        'editor.file.dirty': function (msg) {
-                            var file, isDirty;
-                            if (typeof msg.data === 'string') {
-                                file = msg.data;
-                                isDirty = true;
-                            } else {
-                                file = msg.data.file;
-                                isDirty = msg.data.isDirty;
-                            }
-
-                            if (isDirty) {
-                                dirtyFiles.push(file);
-                            } else {
-                                dirtyFiles = dirtyFiles.filter(e => e !== file);
-                            }
-
-                            Layouts.manager.setEditorDirty(file, isDirty);
-                        },
-                        'editor.file.saved': function (msg) {
-                            dirtyFiles = dirtyFiles.filter(e => e !== msg.data);
-                            Layouts.manager.setEditorDirty(msg.data, false);
-                        }
-                    }
+                    views: ['welcome', 'projects', 'import', 'search', 'properties', 'console', 'preview', 'problems'],
                 };
 
             }]);
-        
-        window.addEventListener('beforeunload', function (e) {
-            if (dirtyFiles.length > 0) {
-                e.preventDefault();
-                e.returnValue = '';
-            }
-        });        
         </script>
 
     </body>

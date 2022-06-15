@@ -1,8 +1,8 @@
-<div class="fd-toolbar">
-  <span>EXPLORER</span>
+<div class="dg-explorer-toolbar fd-toolbar">
+  <span>{{ name }}</span>
   <span class="fd-toolbar__spacer"> </span>
   <div class="fd-popover">
-    <div id="backdrop" aria-hidden="{{hidden}}" class="backdrop" ng-click="hide()"></div>
+    <div aria-hidden="{{hidden}}" class="dg-backdrop" ng-click="hide()"></div>
     <div class="fd-popover__control">
       <button class="fd-button fd-button--compact fd-button--transparent" aria-haspopup="true"
         aria-expanded="{{!hidden}}" aria-label="More" ng-click="toggle()">
@@ -11,10 +11,10 @@
     </div>
     <div class="fd-popover__body fd-popover__body--right fd-popover__body--no-arrow" aria-hidden="{{hidden}}">
       <div class="fd-toolbar__overflow">
-        <button class="fd-button fd-button--compact fd-button--transparent fd-toolbar__overflow-button">
-          <i class="sap-icon--accept" role="presentation"></i> Workspace</button>
-        <button class="fd-button fd-button--compact fd-button--transparent fd-toolbar__overflow-button">
-          <i class="sap-icon--accept" role="presentation"></i> Import</button>
+        <button ng-repeat="item in items" ng-disabled="isLastVisibleItem(item)" ng-click="item.hidden=!item.hidden"
+          class="fd-button fd-button--compact fd-button--transparent fd-toolbar__overflow-button">
+          <i ng-style="{'visibility': !item.hidden?'visible':'hidden'}" class="sap-icon--accept"
+            role="presentation"></i> {{item.label}}</button>
       </div>
     </div>
   </div>

@@ -17,41 +17,38 @@
         <meta http-equiv="X-UA-Compatible" content="IE=edge">
         <meta name="viewport" content="width=device-width, initial-scale=1">
 
-        <title brandtitle perspective-name="SingleView">Single View</title>
+        <link rel="icon" href="data:;base64,iVBORw0KGgo=" dg-brand-icon />
 
-        <link rel="icon" href="data:;base64,iVBORw0KGgo=" brandicon />
+        <title dg-brand-title></title>
 
-        <!-- jQuery -->
+        <script type="text/javascript" src="/services/v4/web/ide-next/services/singleViewPerspective.js"></script>
+
         <script type="text/javascript" src="/webjars/jquery/3.6.0/jquery.min.js"></script>
-
-        <!-- AngularJS -->
         <script type="text/javascript" src="/webjars/angularjs/1.8.2/angular.min.js"></script>
         <script type="text/javascript" src="/webjars/angularjs/1.8.2/angular-resource.min.js"></script>
         <script type="text/javascript" src="/webjars/angular-aria/1.8.2/angular-aria.min.js"></script>
-
-        <!-- Fundamental-styles -->
         <link type="text/css" rel="stylesheet" href="/webjars/fundamental-styles/0.23.0/dist/fundamental-styles.css">
         <theme></theme>
-
-        <!-- Dirigible styles -->
         <link type="text/css" rel="stylesheet" href="/services/v4/web/resources/styles/core.css" />
         <link type="text/css" rel="stylesheet" href="/services/v4/web/resources/styles/perspective.css" />
-        <link type="text/css" rel="stylesheet" href="/services/v4/web/resources/styles/layout.css" />
+        <link type="text/css" rel="stylesheet" href="/services/v4/web/ide-next/ide-layout/layout.css" />
+        <link type="text/css" rel="stylesheet" href="/services/v4/web/resources/styles/widgets.css" />
 
-        <!-- MessageHub -->
         <script type="text/javascript" src="/services/v4/web/ide-core/core/message-hub.js"></script>
         <script type="text/javascript" src="/services/v4/web/ide-core/core/ide-message-hub.js"></script>
 
-        <!-- IDE Core UI -->
+        <script type="text/javascript" src="/services/v4/web/ide-branding/branding.js"></script>
         <script type="text/javascript" src="/webjars/split.js/1.6.5/dist/split.min.js"></script>
+        <script type="text/javascript" src="/services/v4/web/ide-core/ui/editors.js"></script>
         <script type="text/javascript" src="/services/v4/web/ide-core/ui/core-modules.js"></script>
-        <script type="text/javascript" src="/services/v4/web/ide-core/ui/layout.js"></script>
-        <script type="text/javascript" src="/services/v4/web/ide-core/ui/views.js"></script>
+        <script type="text/javascript" src="/services/v4/web/ide-core/ui/theming.js"></script>
+        <script type="text/javascript" src="/services/v4/web/ide-next/ide-layout/layout.js"></script>
+        <script type="text/javascript" src="/services/v4/web/ide-core/ui/widgets.js"></script>
     </head>
 
     <body>
         <!-- Top IDE panel and it's contents -->
-        <ide-header menu-data-url="/services/v4/js/ide-next/services/menu/menu.js"></ide-header>
+        <ide-header menu-data-url="/services/v4/js/ide-core/services/menu.js"></ide-header>
 
         <ide-container active-id="single-view-perspective">
             <split direction="horizontal" ng-transclude>
@@ -74,13 +71,10 @@
         <ide-status-bar class="statusbar"></ide-status-bar>
 
         <script type="text/javascript">
-            angular.module('singleView', ['ngResource', 'layout', 'ideUI'])
-            .config(["messageHubProvider", function (messageHubProvider) {
-                messageHubProvider.evtNamePrefix = 'singleview';
-            }])
-            .controller('SingleViewController', function () {
+            angular.module('singleView', ['ngResource', 'ideLayout', 'ideUI'])
+                .controller('SingleViewController', function () {
 
-            });
+                });
         </script>
 
     </body>

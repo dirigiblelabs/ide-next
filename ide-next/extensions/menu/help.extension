@@ -1,1 +1,5 @@
-{"module":"ide-next/services/menu/help","extensionPoint":"ide-next-menu","description":"Help Menu"}
+{
+    "module": "ide-next/services/menu/help.js",
+    "extensionPoint": "ide-next-menu",
+    "description": "Help Menu"
+}
